@@ -138,7 +138,8 @@ export class GaslessWallet {
   public async populateSponsorTransaction(
     to: string,
     data: string,
-    value: BigNumberish = 0
+    value: BigNumberish = 0,
+    overrideTarget?: string
   ): Promise<TransactionData> {
     if (!this.isInitiated() || !this.#address || !this.#chainId) {
       throw new GaslessWalletError(ErrorTypes.WalletNotInitiated);
@@ -146,7 +147,7 @@ export class GaslessWallet {
     if (await this.isDeployed()) {
       return {
         chainId: this.#chainId,
-        target: this.#address,
+        target: overrideTarget ?? this.#address,
         data: await this._getExecTransactionData(to, data, value),
       };
     }
@@ -156,7 +157,7 @@ export class GaslessWallet {
         callData: await this._getCreateProxyData(),
       },
       {
-        target: this.#address,
+        target: overrideTarget ?? this.#address,
         callData: await this._getExecTransactionData(to, data, value),
       },
     ];
@@ -182,13 +183,14 @@ export class GaslessWallet {
   public async sponsorTransaction(
     to: string,
     data: string,
-    value: BigNumberish = 0
+    value: BigNumberish = 0,
+    overrideTarget?: string
   ): Promise<RelayResponse> {
     const {
       chainId,
       data: populatedData,
       target,
-    } = await this.populateSponsorTransaction(to, data, value);
+    } = await this.populateSponsorTransaction(to, data, value, overrideTarget);
     return await this.#gelatoRelay.sponsoredCall(
       {
         chainId,
